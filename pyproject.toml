@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dnalm"
+version = "0.1.0"
+description = "Modelování DNA sekvencí pomocí jazykových modelů (diplomová práce)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Václav Výrobík" }]
+dependencies = [
+    "torch>=2.4",
+    "transformers>=4.48",      # 4.48+ kvůli ModernBERT
+    "tokenizers>=0.20",
+    "datasets>=3.0",
+    "accelerate>=1.0",
+    "peft>=0.13",              # LoRA pro fine-tuning velkých modelů
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "scikit-learn>=1.4",
+    "scipy>=1.11",
+    "pyyaml>=6.0",
+    "tqdm>=4.66",
+    "matplotlib>=3.8",
+    "pyfaidx>=0.8",            # rychlé čtení úseků genomu z FASTA
+    "biopython>=1.83",
+    "tensorboard>=2.15",
+]
+
+[project.optional-dependencies]
+# Embeddingy, vyhledávání a vizualizace (E4)
+retrieval = [
+    "faiss-cpu>=1.8",
+    "umap-learn>=0.5",
+]
+# Vysvětlitelnost (E5)
+explain = [
+    "captum>=0.7",
+    "bertviz>=1.4",
+    "logomaker>=0.8",
+    "modisco-lite>=2.2",
+]
+# Benchmarky (E2, E3)
+benchmarks = [
+    "genomic-benchmarks>=0.0.9",
+]
+# Logování experimentů do Weights & Biases (volitelné)
+wandb = ["wandb>=0.17"]
+# Vývoj: testy, kontrola kódu, Jupyter kernel
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "ipykernel>=6.29",
+]
+all = ["dnalm[retrieval,explain,benchmarks,wandb,dev]"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

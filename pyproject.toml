@@ -12,11 +12,11 @@ license = { text = "MIT" }
 authors = [{ name = "Václav Výrobík" }]
 dependencies = [
     "torch>=2.4",
-    "transformers>=4.48",      # 4.48+ kvůli ModernBERT
+    "transformers>=4.48",      
     "tokenizers>=0.20",
     "datasets>=3.0",
     "accelerate>=1.0",
-    "peft>=0.13",              # LoRA pro fine-tuning velkých modelů
+    "peft>=0.13",             
     "numpy>=1.26",
     "pandas>=2.1",
     "scikit-learn>=1.4",
@@ -24,7 +24,7 @@ dependencies = [
     "pyyaml>=6.0",
     "tqdm>=4.66",
     "matplotlib>=3.8",
-    "pyfaidx>=0.8",            # rychlé čtení úseků genomu z FASTA
+    "pyfaidx>=0.8",            
     "biopython>=1.83",
     "tensorboard>=2.15",
 ]
@@ -46,9 +46,9 @@ explain = [
 benchmarks = [
     "genomic-benchmarks>=0.0.9",
 ]
-# Logování experimentů do Weights & Biases (volitelné)
+
 wandb = ["wandb>=0.17"]
-# Vývoj: testy, kontrola kódu, Jupyter kernel
+
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",

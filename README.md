@@ -1,2 +1,1 @@
-# dna-lm
-Diploma thesis
+source .venv/bin/activate

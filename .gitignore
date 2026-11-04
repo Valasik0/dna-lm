@@ -219,11 +219,12 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-data/
-checkpoints/
-runs/
-wandb/
-lightning_logs/
+# lomítko na začátku = jen složky v kořeni repa (ne src/dnalm/data/ s kódem)
+/data/
+/checkpoints/
+/runs/
+/wandb/
+/lightning_logs/
 *.npz
 *.npy
 *.pth

@@ -44,14 +44,14 @@ def genome(tmp_path):
     return str(path), seqs
 
 
-SPLITS = {"train": ["chr1", "chr2"], "val": ["chr20"], "test": ["chr21"]}
-
-
 def test_reverse_complement():
     assert reverse_complement("ACGTN") == "NACGT"
     assert reverse_complement("aacG") == "Cgtt"
     s = "ACGTTGCAAGGN"
     assert reverse_complement(reverse_complement(s)) == s
+
+
+SPLITS = {"train": ["chr1", "chr2"], "val": ["chr20"], "test": ["chr21"]}
 
 
 def test_window_stats_matches_naive():

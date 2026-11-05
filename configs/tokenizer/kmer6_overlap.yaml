@@ -1,0 +1,6 @@
+# T2: překrývající se 6-mery (jako DNABERT).
+# JEN KONTROLNÍ EXPERIMENT: při MLM sousední tokeny prozrazují maskovaný token.
+name: kmer6_overlap
+type: kmer
+k: 6
+stride: 1

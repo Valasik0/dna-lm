@@ -1,0 +1,7 @@
+# T5: BPE se slovníkem 4 096 tokenů (jako DNABERT-2)
+name: bpe_4096
+type: bpe
+vocab_size: 4096
+train:
+  n_windows: 100000   # náhodný vzorek trénovacích oken (~100 milionů bp, ~7 GB RAM; víc chce High-RAM runtime)
+  seed: 42

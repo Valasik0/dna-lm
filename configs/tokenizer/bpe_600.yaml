@@ -1,0 +1,7 @@
+# T4: BPE s malým slovníkem (~600 tokenů, jako GROVER)
+name: bpe_600
+type: bpe
+vocab_size: 600
+train:
+  n_windows: 100000   # náhodný vzorek trénovacích oken (~100 milionů bp, ~7 GB RAM; víc chce High-RAM runtime)
+  seed: 42

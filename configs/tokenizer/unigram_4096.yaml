@@ -1,0 +1,8 @@
+# T6 (volitelně): Unigram se slovníkem 4 096 tokenů
+name: unigram_4096
+type: unigram
+vocab_size: 4096
+max_token_length: 16
+train:
+  n_windows: 100000   # náhodný vzorek trénovacích oken (~100 milionů bp, ~7 GB RAM; víc chce High-RAM runtime)
+  seed: 42

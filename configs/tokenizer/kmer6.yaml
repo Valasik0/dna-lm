@@ -1,0 +1,5 @@
+# T3: nepřekrývající se 6-mery (jako Nucleotide Transformer). Hlavní k-merová varianta.
+name: kmer6
+type: kmer
+k: 6
+stride: 6

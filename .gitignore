@@ -225,6 +225,7 @@ __marimo__/
 /runs/
 /wandb/
 /lightning_logs/
+/data_root/
 *.npz
 *.npy
 *.pth

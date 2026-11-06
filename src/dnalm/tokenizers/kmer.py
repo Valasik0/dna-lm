@@ -15,9 +15,8 @@ from itertools import product
 from .base import UNK, DNATokenizer, specials_vocab
 from .nucleotide import NUCLEOTIDES
 
-# Nad k = 7 je slovník (4^k) pro naše modely nepraktický: k = 8 má 65 536 tokenů a embedding
-# matice by byla větší než celý encoder modelu S, k = 10 má ~1 milion tokenů, většinu z nich
-# by model v tréninku viděl jen párkrát.
+# Nad k = 7 je slovník (4^k) nepoužitelný: k = 10 má ~1 milion tokenů, většinu z nich
+# by model v tréninku viděl jen párkrát a embedding matice by byla větší než celý model.
 MAX_K = 7
 
 

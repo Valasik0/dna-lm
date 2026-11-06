@@ -1,0 +1,5 @@
+# Řada k-merů (rozšíření E2): nepřekrývající se 4-mery, slovník 4^4 = 256 tokenů
+name: kmer4
+type: kmer
+k: 4
+stride: 4

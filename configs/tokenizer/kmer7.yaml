@@ -1,0 +1,5 @@
+# Řada k-merů (rozšíření E2): nepřekrývající se 7-mery, slovník 4^7 = 16384 tokenů
+name: kmer7
+type: kmer
+k: 7
+stride: 7

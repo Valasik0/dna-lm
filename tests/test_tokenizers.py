@@ -23,6 +23,7 @@ from dnalm.tokenizers import (
     load_tokenizer,
     needs_training,
 )
+from dnalm.tokenizers.kmer import MAX_K
 from dnalm.tokenizers.stats import mutation_stability, repeat_token_lengths, summary
 
 CONFIG_DIR = os.path.join(os.path.dirname(__file__), "..", "configs", "tokenizer")
@@ -183,3 +184,17 @@ def test_repeat_token_lengths():
     r = repeat_token_lengths(KmerTokenizer(k=3), ["acgacgACGACG"])
     assert r["len_in_repeats"] == 3 and r["len_outside_repeats"] == 3
     assert r["tokens_in_repeats_share"] == 0.5
+
+
+@pytest.mark.parametrize("k", range(2, MAX_K + 1))
+def test_kmer_series(k):
+    tok = KmerTokenizer(k=k)
+    assert tok.vocab_size == 5 + 4**k + 5
+    seq = "ACGTTGCA" * 128  # 1 024 bp
+    assert tok.decode(tok.encode(seq)) == seq
+    assert len(tok.tokenize(seq)) == 1024 // k + 1024 % k
+
+
+def test_kmer_too_large():
+    with pytest.raises(ValueError):
+        KmerTokenizer(k=MAX_K + 1)

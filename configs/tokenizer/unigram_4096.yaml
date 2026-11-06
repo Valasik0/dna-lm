@@ -1,4 +1,4 @@
-# T6 (volitelně): Unigram se slovníkem 4 096 tokenů
+# Unigram se slovníkem 4 096 tokenů
 name: unigram_4096
 type: unigram
 vocab_size: 4096

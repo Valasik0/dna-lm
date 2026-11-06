@@ -37,6 +37,7 @@ ENTITY_COLORS = {
 }
 
 ENTITY_LABELS = {
+    **{f"kmer{k}": f"{k}-mery" for k in range(2, 8)},
     "nucleotide": "Nukleotidy (T1)",
     "kmer6_overlap": "6-mery s překryvem (T2)",
     "kmer6": "6-mery (T3)",
@@ -52,8 +53,25 @@ GRID = "#e4e3df"
 FIG_DIR = os.environ.get("DNALM_FIG_DIR", "results/figures")
 
 
-def color_for(name: str) -> str:
-    return ENTITY_COLORS.get(name, TEXT_SECONDARY)
+# Řada k-merů (k = 2..7) je veličina s pořadím -> sekvenční škála jednoho odstínu
+# (oranžová jako kmer6), od světlé pro malé k po tmavou pro velké k.
+KMER_SERIES = {
+    2: "#f9e0d0",
+    3: "#f6c4a8",
+    4: "#f2a079",
+    5: "#ee8452",
+    6: "#eb6834",  # stejná jako kmer6 v ostatních grafech
+    7: "#c9521f",
+}
+
+
+def color_for(name: str, series: bool = False) -> str:
+    """Barva entity. series=True: pro k-mery barva podle k (graf řady k = 2..7)."""
+    if series and name.startswith("kmer") and name[4:].isdigit():
+        return KMER_SERIES.get(int(name[4:]), TEXT_SECONDARY)
+    if name in ENTITY_COLORS:
+        return ENTITY_COLORS[name]
+    return TEXT_SECONDARY
 
 
 def label_for(name: str) -> str:

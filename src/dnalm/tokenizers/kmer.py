@@ -15,11 +15,18 @@ from itertools import product
 from .base import UNK, DNATokenizer, specials_vocab
 from .nucleotide import NUCLEOTIDES
 
+# Nad k = 7 je slovník (4^k) pro naše modely nepraktický: k = 8 má 65 536 tokenů a embedding
+# matice by byla větší než celý encoder modelu S, k = 10 má ~1 milion tokenů, většinu z nich
+# by model v tréninku viděl jen párkrát.
+MAX_K = 7
+
 
 class KmerTokenizer(DNATokenizer):
     type_name = "kmer"
 
     def __init__(self, k: int = 6, stride: int | None = None, name: str | None = None):
+        if not 1 <= k <= MAX_K:
+            raise ValueError(f"k musí být 1–{MAX_K} (slovník 4^k: k={k} dá {4**k:,} tokenů)")
         stride = k if stride is None else stride
         if not 1 <= stride <= k:
             raise ValueError("stride musí být mezi 1 a k")

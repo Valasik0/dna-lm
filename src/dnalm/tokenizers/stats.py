@@ -1,5 +1,5 @@
 """
-Statistiky tokenizérů pro kapitolu Tokenizace (úkol 1.9).
+Statistiky tokenizérů.
 
 Všechny funkce berou tokenizér a seznam sekvencí (např. vzorek validačních oken).
 """

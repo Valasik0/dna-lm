@@ -1,0 +1,15 @@
+# Kontrola k leak_kmer3_overlap: stejné 3-mery bez překryvu -> má vyjít ~2 bity/nt.
+name: leak_kmer3
+tokenizer: kmer3
+model: S
+data:
+  source: random
+  window: 1024
+  random_windows: 200000
+  val_windows: 1000
+train:
+  budget_nt: 5.0e7
+  batch_size: 64
+  lr: 6.0e-4
+  eval_every: 100
+  save_every: 250

@@ -1,0 +1,16 @@
+# Úkol 2.11: test úniku informace na náhodné DNA. Nejlepší možné BPN = 2 bity.
+# Výrazně menší hodnota znamená, že tokenizace modelu napovídá (čekáme u kmer6_overlap).
+name: leak_kmer6_overlap
+tokenizer: kmer6_overlap
+model: S
+data:
+  source: random
+  window: 1024
+  random_windows: 200000
+  val_windows: 1000
+train:
+  budget_nt: 1.0e8
+  batch_size: 64
+  lr: 6.0e-4
+  eval_every: 250
+  save_every: 250

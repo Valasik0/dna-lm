@@ -1,0 +1,6 @@
+# Mini model pro rychlé testy na CPU
+name: debug
+hidden_size: 64
+num_layers: 2
+num_heads: 2
+intermediate_size: 128

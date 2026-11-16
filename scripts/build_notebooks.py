@@ -537,10 +537,88 @@ for name, tok in tokenizers.items():
 )
 
 
+# =============================================================================
+# 04 Předtrénink
+# =============================================================================
+
+NB04 = notebook(
+    [
+        md("""
+# 04 MLM předtrénink (úkoly 2.9–2.11, E2)
+
+Natrénuje jeden model podle konfigurace z `configs/pretrain/`. Stav se průběžně ukládá
+na Drive (`checkpoints/<název>/`). Když Colab spadne nebo vyprší čas, stačí notebook
+spustit znovu: trénink pokračuje od posledního uloženého kroku.
+
+Runtime: **GPU** (A100 nebo L4). Testy úniku (`leak_*`) zvládne i T4.
+
+| Konfigurace | Co dělá |
+| --- | --- |
+| `S_nucleotide`, `S_kmer6`, `S_bpe_600`, `S_bpe_4096` | E2: model S s danou tokenizací |
+| `leak_kmer3_overlap`, `leak_kmer3` | test úniku na náhodné DNA (překrývající vs. nepřekrývající 3-mery) |
+| `leak_nucleotide`, `leak_kmer6`, `leak_bpe_4096`, `leak_kmer6_overlap` | test na náhodné DNA pro hlavní tokenizace |
+"""),
+        md("## 1. Nastavení"),
+        code("""
+WINDOW = 1024
+CONFIG = "leak_kmer3_overlap"   # název souboru v configs/pretrain/ bez .yaml
+
+# Přepsání hodnot z konfigurace, např. pro pilotní běh:
+# OVERRIDES = ["train.budget_nt=2e8", "train.batch_size=64"]
+OVERRIDES = []
+"""),
+        SETUP_MD,
+        code(bootstrap()),
+        md("## 2. GPU a konfigurace"),
+        code("""
+import torch, yaml
+from dnalm.pretrain import load_run_config
+
+print("GPU:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "není (CPU/MPS)")
+cfg = load_run_config(str(P.configs / "pretrain" / f"{CONFIG}.yaml"), OVERRIDES)
+print(yaml.safe_dump(cfg, allow_unicode=True, sort_keys=False))
+"""),
+        md(
+            "## 3. Trénink\n\nPřerušený běh (pád Colabu, vypršení času) pokračuje od posledního checkpointu."
+        ),
+        code("""
+from dnalm.pretrain import train
+
+result = train(cfg, P=P)
+result
+"""),
+        md("## 4. Průběh tréninku"),
+        code("""
+import pandas as pd
+import matplotlib.pyplot as plt
+from dnalm.utils.plotting import apply_style, save_figure
+apply_style()
+
+m = pd.read_csv(P.checkpoints / cfg["name"] / "metrics.csv")
+tr, va = m[m.split == "train"], m[m.split == "val"]
+fig, ax = plt.subplots(figsize=(6, 3.4))
+ax.plot(tr.seen_nt / 1e9, tr.bpn, color="#9b9a95", linewidth=1.2, label="trénink (80/10/10)")
+ax.plot(va.seen_nt / 1e9, va.bpn, color="#2a78d6", marker="o", markersize=4, label="validace")
+if cfg["data"].get("source") == "random":
+    ax.axhline(2.0, color="#52514e", linestyle="--", linewidth=1)
+    ax.annotate("náhoda: 2 bity", (0, 2.0), xytext=(4, 4), textcoords="offset points", fontsize=9)
+ax.set_xlabel("viděné nukleotidy (miliardy)")
+ax.set_ylabel("bity na nukleotid")
+ax.set_title(f"{cfg['name']}: průběh předtréninku", loc="left")
+ax.legend()
+save_figure(fig, f"pretrain_{cfg['name']}", str(P.figures))
+plt.show()
+va.tail()
+"""),
+    ]
+)
+
+
 NOTEBOOKS = {
     "01_download_genome.ipynb": NB01,
     "02_make_windows.ipynb": NB02,
     "03_tokenizers.ipynb": NB03,
+    "04_pretrain.ipynb": NB04,
 }
 
 

@@ -1,0 +1,9 @@
+# Model S: hlavní model pro srovnání tokenizací (E2) a rozšíření
+name: S
+hidden_size: 384
+num_layers: 6
+num_heads: 6            # dimenze hlavy 64
+intermediate_size: 1536 # GeGLU: vstupní projekce má 2 × 1536
+dropout: 0.0
+attention_dropout: 0.0
+global_every: 1         # všechny vrstvy s globální attention

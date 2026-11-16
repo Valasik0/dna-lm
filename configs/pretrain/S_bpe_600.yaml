@@ -1,0 +1,15 @@
+# E2: model S s tokenizací bpe_600. Rozpočet je stejný pro všechny tokenizace.
+name: S_bpe_600
+tokenizer: bpe_600
+model: S
+data:
+  window: 1024
+  rc_prob: 0.0          # augmentace reverzním komplementem (ablace: 0.5)
+  val_windows: 2000     # pevná podmnožina validačních oken (chr20)
+train:
+  budget_nt: 2.0e9      # viděných nukleotidů; upřesní pilotní běh
+  batch_size: 128
+  lr: 6.0e-4
+  warmup_frac: 0.05
+  eval_every: 500
+  save_every: 500

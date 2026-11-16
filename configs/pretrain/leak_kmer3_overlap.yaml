@@ -1,0 +1,17 @@
+# Úkol 2.11: ukázka úniku informace. Překrývající se 3-mery na náhodné DNA.
+# Malý model se během pár set kroků naučí „opisovat“ ze sousedů: ~0,05 bitu/nt a ~95 %
+# přesnost na datech, kde nic předpovědět nejde (správně je 2 bity a 1/64 přesnost).
+name: leak_kmer3_overlap
+tokenizer: {name: kmer3_overlap, type: kmer, k: 3, stride: 1}
+model: S
+data:
+  source: random
+  window: 1024
+  random_windows: 200000
+  val_windows: 1000
+train:
+  budget_nt: 5.0e7
+  batch_size: 64
+  lr: 6.0e-4
+  eval_every: 100
+  save_every: 250

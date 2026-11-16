@@ -1,0 +1,9 @@
+# Model M: větší model s nejlepší tokenizací (E1, E3–E5)
+name: M
+hidden_size: 512
+num_layers: 12
+num_heads: 8            # dimenze hlavy 64
+intermediate_size: 2048
+dropout: 0.0
+attention_dropout: 0.0
+global_every: 1

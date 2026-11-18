@@ -174,7 +174,10 @@ def pick_dtype(precision: str, device: torch.device):
     if precision == "fp32":
         return None
     if device.type == "cuda":
-        if precision in ("auto", "bf16") and torch.cuda.is_bf16_supported():
+        # bf16 jen tam, kde ho GPU umí hardwarově (Ampere a novější: A100, L4, H100);
+        # torch.cuda.is_bf16_supported() vrací True i pro emulaci na T4, která je pomalá
+        native_bf16 = torch.cuda.get_device_capability(device)[0] >= 8
+        if precision == "bf16" or (precision == "auto" and native_bf16):
             return torch.bfloat16
         if precision in ("auto", "fp16"):
             return torch.float16

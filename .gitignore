@@ -269,3 +269,6 @@ results/**/*.npy
 *.toc
 *.lof
 *.lot
+
+# Soukromé poznámky (jen pro nás, ne na GitHub)
+/docs/

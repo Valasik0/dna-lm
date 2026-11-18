@@ -235,6 +235,23 @@ def evaluate(model, loader, collator, tok, device, dtype) -> dict:
     return meter.compute()
 
 
+METRICS_HEADER = ["step", "split", "loss", "bpn", "accuracy", "lr", "nt_per_s", "seen_nt"]
+
+
+def ensure_metrics_header(path: Path) -> None:
+    """
+    Zajistí hlavičku v metrics.csv. Když běh spadne hned po vytvoření souboru (např. OOM),
+    hlavička se nemusí zapsat na disk a další běh by připisoval data bez ní.
+    """
+    header = ",".join(METRICS_HEADER)
+    if not path.exists() or path.stat().st_size == 0:
+        path.write_text(header + "\n")
+        return
+    content = path.read_text()
+    if not content.startswith("step,"):
+        path.write_text(header + "\n" + content)
+
+
 def _save_atomic(obj, path: Path):
     tmp = path.with_suffix(".tmp")
     torch.save(obj, tmp)
@@ -341,11 +358,9 @@ def train(cfg: dict, P: Paths | None = None, out_dir: str | None = None, verbose
         )
 
     log_path = out / "metrics.csv"
-    new_log = not log_path.exists()
+    ensure_metrics_header(log_path)
     log_f = open(log_path, "a", newline="")
     log = csv.writer(log_f)
-    if new_log:
-        log.writerow(["step", "split", "loss", "bpn", "accuracy", "lr", "nt_per_s", "seen_nt"])
 
     model.train()
     it = iter(train_loader)

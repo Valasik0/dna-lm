@@ -124,3 +124,18 @@ def test_yaml_scientific_numbers(tmp_path):
     assert cfg["train"]["lr"] == 6e-4 and cfg["train"]["batch_size"] == 8
     assert cfg["train"]["warmup_frac"] == 0.01
     assert cfg["name"] == "x" and cfg["tokenizer"] == "kmer6"
+
+
+def test_metrics_header_repair(tmp_path):
+    from dnalm.pretrain import ensure_metrics_header
+
+    p = tmp_path / "metrics.csv"
+    p.write_text("")
+    ensure_metrics_header(p)
+    assert p.read_text().startswith("step,split")
+    p.write_text("50,train,1.0,0.5,0.9,0.001,1000,512\n")
+    ensure_metrics_header(p)
+    rows = read_metrics(p)
+    assert rows[0]["split"] == "train" and len(rows) == 1
+    ensure_metrics_header(p)  # opakované volání nic nezdvojí
+    assert len(read_metrics(p)) == 1

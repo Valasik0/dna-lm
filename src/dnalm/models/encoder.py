@@ -109,13 +109,20 @@ class Attention(nn.Module):
         b, n, _ = x.shape
         h, d = self.cfg.num_heads, self.cfg.head_dim
         q, k, v = self.qkv(x).view(b, n, 3, h, d).permute(2, 0, 3, 1, 4)  # 3 × (B, H, L, D)
+        # RoPE v přesnosti q (pod autocastem fp16/bf16), jinak by se q převedlo na fp32
+        # a PyTorch by nemohl použít úsporné jádro attention
+        cos, sin = cos.to(q.dtype), sin.to(q.dtype)
         q, k = apply_rope(q, cos, sin), apply_rope(k, cos, sin)
         p = self.cfg.attention_dropout if self.training else 0.0
         if output_attentions:
-            scores = (q @ k.transpose(-2, -1)) / math.sqrt(d) + attn_bias
+            scores = (q @ k.transpose(-2, -1)) / math.sqrt(d)
+            if attn_bias is not None:  # bool maska: True = smí se dívat
+                scores = scores.masked_fill(~attn_bias, torch.finfo(scores.dtype).min)
             probs = scores.softmax(dim=-1)
             ctx = F.dropout(probs, p=p, training=self.training) @ v
         else:
+            # bez masky (žádný padding) může PyTorch použít FlashAttention nebo
+            # memory-efficient attention, které nedrží celou matici L × L v paměti
             ctx = F.scaled_dot_product_attention(q, k, v, attn_mask=attn_bias, dropout_p=p)
             probs = None
         ctx = ctx.transpose(1, 2).reshape(b, n, h * d)
@@ -175,16 +182,21 @@ class DNAEncoder(nn.Module):
         self.layers = nn.ModuleList(Block(cfg) for _ in range(cfg.num_layers))
         self.final_norm = nn.LayerNorm(cfg.hidden_size, eps=cfg.norm_eps, bias=False)
 
-    def _attn_bias(self, attention_mask, length, dtype, device, global_layer):
-        """Aditivní maska (B, 1, L, L): 0 = smí se dívat, -inf = nesmí (padding, mimo okno)."""
-        neg = torch.finfo(dtype).min
+    def _attn_bias(self, attention_mask, length, device, global_layer):
+        """
+        Bool maska (B, 1, 1|L, L), True = smí se dívat (ne padding, v okně lokální attention).
+        Vrací None, když není co maskovat (globální vrstva, žádný padding): pak běží
+        nejrychlejší a paměťově nejúspornější jádro attention.
+        """
+        has_padding = not bool(attention_mask.all())
+        if global_layer and not has_padding:
+            return None
         keep = attention_mask[:, None, None, :].bool()  # (B,1,1,L)
         if not global_layer:
             i = torch.arange(length, device=device)
             window = (i[:, None] - i[None, :]).abs() <= self.cfg.local_window // 2
             keep = keep & window[None, None]
-        bias = torch.zeros(keep.shape, dtype=dtype, device=device)
-        return bias.masked_fill(~keep, neg)
+        return keep
 
     def forward(
         self,
@@ -205,7 +217,7 @@ class DNAEncoder(nn.Module):
         for i, layer in enumerate(self.layers):
             g = self.cfg.is_global(i)
             if g not in biases:
-                biases[g] = self._attn_bias(attention_mask, n, x.dtype, x.device, g)
+                biases[g] = self._attn_bias(attention_mask, n, x.device, g)
             x, probs = layer(x, cos, sin, biases[g], output_attentions)
             if output_hidden_states:
                 hidden.append(x)

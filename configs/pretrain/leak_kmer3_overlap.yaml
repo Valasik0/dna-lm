@@ -11,7 +11,8 @@ data:
   val_windows: 1000
 train:
   budget_nt: 5.0e7
-  batch_size: 64
+  batch_size: 32        # T4 (15 GB): 32 sekvencí × 2 kroky akumulace = efektivně 64
+  grad_accum: 2
   lr: 6.0e-4
   eval_every: 100
   save_every: 250

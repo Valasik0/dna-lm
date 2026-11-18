@@ -135,3 +135,28 @@ def test_eval_collator_masks_everything():
     out = col([tok.encode("ACGT" * 50)])
     sel = out["labels"] != -100
     assert (out["input_ids"][sel] == MASK_ID).all()
+
+
+def test_no_mask_without_padding():
+    """Bez paddingu se maska nepředává (rychlé jádro attention), s paddingem je bool."""
+    m = tiny()
+    enc = m.encoder
+    full = torch.ones(2, 10, dtype=torch.long)
+    assert enc._attn_bias(full, 10, "cpu", True) is None
+    padded = full.clone()
+    padded[1, 7:] = 0
+    mask = enc._attn_bias(padded, 10, "cpu", True)
+    assert mask.dtype == torch.bool and not mask[1, 0, 0, 8]
+    assert enc._attn_bias(full, 10, "cpu", False).dtype == torch.bool  # lokální okno
+
+
+def test_autocast_bf16_cpu():
+    """Pod autocastem (bf16) projde forward i backward a výsledek je konečný."""
+    m = tiny()
+    x = torch.randint(5, 10, (2, 30))
+    labels = torch.full_like(x, -100)
+    labels[:, ::3] = x[:, ::3]
+    with torch.autocast("cpu", dtype=torch.bfloat16):
+        out = m(x, labels=labels)
+    out["loss"].backward()
+    assert torch.isfinite(out["loss"])

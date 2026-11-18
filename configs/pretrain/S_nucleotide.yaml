@@ -8,7 +8,8 @@ data:
   val_windows: 2000     # pevná podmnožina validačních oken (chr20)
 train:
   budget_nt: 2.0e9      # viděných nukleotidů; upřesní pilotní běh
-  batch_size: 128
+  batch_size: 64        # nukleotidy = ~1 000 tokenů na okno: 64 × 2 = efektivně 128
+  grad_accum: 2
   lr: 6.0e-4
   warmup_frac: 0.05
   eval_every: 500

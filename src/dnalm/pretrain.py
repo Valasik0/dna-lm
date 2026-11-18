@@ -22,6 +22,9 @@ import copy
 import csv
 import math
 import os
+
+# méně fragmentace paměti GPU (musí být nastaveno před prvním použitím CUDA)
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 import random
 import time
 from pathlib import Path
@@ -164,13 +167,20 @@ def pick_device() -> torch.device:
 
 
 def pick_dtype(precision: str, device: torch.device):
+    """
+    auto: bf16 na GPU, které ho umí (A100, L4, H100), fp16 na starších (T4, V100),
+    fp32 na Macu (MPS) a CPU. fp16 potřebuje GradScaler (viz train), bf16 ne.
+    """
     if precision == "fp32":
         return None
-    if precision in ("auto", "bf16") and device.type == "cuda" and torch.cuda.is_bf16_supported():
-        return torch.bfloat16
+    if device.type == "cuda":
+        if precision in ("auto", "bf16") and torch.cuda.is_bf16_supported():
+            return torch.bfloat16
+        if precision in ("auto", "fp16"):
+            return torch.float16
     if precision == "bf16" and device.type == "cpu":
         return torch.bfloat16
-    return None  # MPS a starší GPU: fp32 (spolehlivé)
+    return None
 
 
 def lr_at(step: int, total: int, cfg: dict) -> float:
@@ -281,12 +291,17 @@ def train(cfg: dict, P: Paths | None = None, out_dir: str | None = None, verbose
         fused=device.type == "cuda",
     )
 
+    # fp16 má malý rozsah: ztráta se před backward násobí, aby gradienty nepodtekly k nule
+    scaler = torch.amp.GradScaler(device.type, enabled=dtype == torch.float16)
+
     step, best_bpn = 0, float("inf")
     ckpt = out / "last.pt"
     if ckpt.exists():
         state = torch.load(ckpt, map_location=device, weights_only=False)
         model.load_state_dict(state["model"])
         opt.load_state_dict(state["optimizer"])
+        if "scaler" in state:
+            scaler.load_state_dict(state["scaler"])
         step, best_bpn = state["step"], state.get("best_bpn", best_bpn)
         _set_rng_state(state["rng"])
         if verbose:
@@ -341,11 +356,13 @@ def train(cfg: dict, P: Paths | None = None, out_dir: str | None = None, verbose
             batch = {k: v.to(device, non_blocking=True) for k, v in next(it).items()}
             with torch.autocast(device.type, dtype=dtype, enabled=dtype is not None):
                 res = model(**batch)
-            (res["loss"] / tc["grad_accum"]).backward()
+            scaler.scale(res["loss"] / tc["grad_accum"]).backward()
             meter.update(res["logits"].detach(), res["labels"])
             nt_since += batch["input_ids"].shape[0] * cfg["data"]["window"]
+        scaler.unscale_(opt)
         torch.nn.utils.clip_grad_norm_(model.parameters(), tc["grad_clip"])
-        opt.step()
+        scaler.step(opt)
+        scaler.update()
         opt.zero_grad(set_to_none=True)
         step += 1
         seen = step * tokens_per_step * cfg["data"]["window"]
@@ -381,6 +398,7 @@ def train(cfg: dict, P: Paths | None = None, out_dir: str | None = None, verbose
                 {
                     "model": model.state_dict(),
                     "optimizer": opt.state_dict(),
+                    "scaler": scaler.state_dict(),
                     "step": step,
                     "best_bpn": best_bpn,
                     "rng": _rng_state(),

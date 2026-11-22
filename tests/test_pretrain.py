@@ -139,3 +139,16 @@ def test_metrics_header_repair(tmp_path):
     assert rows[0]["split"] == "train" and len(rows) == 1
     ensure_metrics_header(p)  # opakované volání nic nezdvojí
     assert len(read_metrics(p)) == 1
+
+
+def test_trim_metrics_after_resume(tmp_path):
+    from dnalm.pretrain import METRICS_HEADER, trim_metrics
+
+    path = tmp_path / "metrics.csv"
+    rows = [",".join(METRICS_HEADER)]
+    rows += [f"{s},train,1,1,0,0,0,0" for s in (450, 500, 550, 600)]
+    rows += ["500,val,1,1,0,0,0,0"]
+    path.write_text("\n".join(rows) + "\n")
+    trim_metrics(path, 500)
+    steps = [ln.split(",")[0] for ln in path.read_text().splitlines()[1:]]
+    assert steps == ["450", "500", "500"]

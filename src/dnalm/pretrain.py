@@ -252,6 +252,23 @@ def ensure_metrics_header(path: Path) -> None:
         path.write_text(header + "\n" + content)
 
 
+def trim_metrics(path: Path, step: int) -> None:
+    """
+    Po pokračování od last.pt smaže z metrics.csv řádky za uloženým krokem.
+    Běh mohl po posledním checkpointu ještě pár set kroků logovat, než spadl;
+    ty kroky se teď spočítají znovu a v CSV by byly dvakrát.
+    """
+    if not path.exists():
+        return
+    lines = path.read_text().splitlines(keepends=True)
+    kept = [
+        ln for i, ln in enumerate(lines)
+        if i == 0 or not ln.strip() or int(ln.split(",", 1)[0]) <= step
+    ]
+    if len(kept) != len(lines):
+        path.write_text("".join(kept))
+
+
 def _save_atomic(obj, path: Path):
     tmp = path.with_suffix(".tmp")
     torch.save(obj, tmp)
@@ -359,6 +376,8 @@ def train(cfg: dict, P: Paths | None = None, out_dir: str | None = None, verbose
 
     log_path = out / "metrics.csv"
     ensure_metrics_header(log_path)
+    if step > 0:
+        trim_metrics(log_path, step)
     log_f = open(log_path, "a", newline="")
     log = csv.writer(log_f)
 

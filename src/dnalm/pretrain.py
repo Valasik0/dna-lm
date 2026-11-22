@@ -286,7 +286,8 @@ def _rng_state():
 def _set_rng_state(s):
     random.setstate(s["python"])
     np.random.set_state(s["numpy"])
-    torch.set_rng_state(s["torch"])
+    # torch.load(map_location="cuda") přesune i stav RNG na GPU, set_rng_state ale chce CPU ByteTensor
+    torch.set_rng_state(s["torch"].cpu())
 
 
 # --------------------------------------------------------------------------- trénink

@@ -60,3 +60,39 @@ def test_setup_colab_branch(tmp_path, monkeypatch):
     assert P.fasta.read_text() == ">chr1\nACGT\n"
     assert (scratch / "genome/hg38.main.fa.fai").exists()
     assert P.windows("val") == drive_root / "data/processed/windows_1024/val.tsv.gz"
+
+
+def _fake_drive(tmp_path, monkeypatch, folder="My Drive"):
+    from dnalm.utils import paths
+
+    root = tmp_path / "CloudStorage" / "GoogleDrive-student@example.com" / folder / "dna-lm"
+    genome = root / "data/raw/genome"
+    genome.mkdir(parents=True)
+    (genome / "hg38.main.fa").write_text(">chr1\nACGT\n")
+    (genome / "hg38.main.fa.fai").write_text("chr1\t4\t6\t4\t5\n")
+    monkeypatch.delenv("DNALM_ROOT", raising=False)
+    monkeypatch.delenv("DNALM_NO_DRIVE", raising=False)
+    monkeypatch.setattr(paths, "DRIVE_SYNC_BASE", tmp_path / "CloudStorage")
+    monkeypatch.setattr(paths, "LOCAL_SCRATCH", tmp_path / "cache")
+    monkeypatch.setattr(paths, "in_colab", lambda: False)
+    return root
+
+
+@pytest.mark.parametrize("folder", ["My Drive", "Můj disk"])
+def test_drive_for_desktop(tmp_path, monkeypatch, folder):
+    """Mac s Google Drive pro počítač: stejná data jako v Colabu, genom zkopírovaný lokálně."""
+    root = _fake_drive(tmp_path, monkeypatch, folder)
+    P = setup(verbose=False)
+    assert P.environment == "drive" and P.root == root
+    assert P.checkpoints == root / "checkpoints"
+    assert P.fasta == tmp_path / "cache/genome/hg38.main.fa"
+    assert P.fasta.read_text() == ">chr1\nACGT\n"
+
+
+def test_dnalm_root_beats_drive(tmp_path, monkeypatch):
+    _fake_drive(tmp_path, monkeypatch)
+    monkeypatch.setenv("DNALM_ROOT", str(tmp_path / "own"))
+    assert get_paths().environment == "custom"
+    monkeypatch.delenv("DNALM_ROOT")
+    monkeypatch.setenv("DNALM_NO_DRIVE", "1")
+    assert get_paths().environment == "local"
